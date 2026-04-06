@@ -27,6 +27,7 @@ func main() {
 			os.Exit(int(E_IO))
 		}
 		node := torrconfig.Parse()
+		v1, v2, is_v1, is_v2 := torrconfig.Merkle_root(node)
 		if node == nil {
 			fmt.Println("Parse failed!!")
 			os.Exit(int(E_BEN))
@@ -34,6 +35,7 @@ func main() {
 		if clargs.dbg {
 			print_tree(node, 0)
 		}
+		dict := Traverse(node).(map[string]any)
 
 	}
 

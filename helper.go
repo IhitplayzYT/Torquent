@@ -105,3 +105,5 @@ func If[T any](cond bool, tval T, fval T) T {
 	}
 	return fval
 }
+
+func WRN(a any) {}

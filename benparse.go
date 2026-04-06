@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 )
@@ -15,7 +16,12 @@ const (
 	BSTR
 	BLIST
 	BDICT
+	BSPAN
 )
+
+type Span struct {
+	strt, end int
+}
 
 type BNode struct {
 	Type Btype
@@ -23,6 +29,7 @@ type BNode struct {
 	Str  []byte
 	List []*BNode
 	Dict map[string]*BNode
+	span Span
 }
 
 type Torrent struct {
@@ -70,17 +77,18 @@ func (self *Torrent) Parse() *BNode {
 		fmt.Println("EOF")
 		os.Exit(int(E_FILE))
 	}
+	strt := self.cur
 	switch self.doc[self.cur] {
 	case 'd':
 		self.cur++
-		return &BNode{Type: BDICT, Dict: self.eval_dict()}
+		return &BNode{Type: BDICT, Dict: self.eval_dict(), span: Span{strt, self.cur}}
 	case 'l':
 		self.cur++
-		return &BNode{Type: BLIST, List: self.eval_list()}
+		return &BNode{Type: BLIST, List: self.eval_list(), span: Span{strt, self.cur}}
 	case 'i':
-		return &BNode{Type: BINT, Int: self.eval_int()}
+		return &BNode{Type: BINT, Int: self.eval_int(), span: Span{strt, self.cur}}
 	default:
-		return &BNode{Type: BSTR, Str: self.eval_bstr()}
+		return &BNode{Type: BSTR, Str: self.eval_bstr(), span: Span{strt, self.cur}}
 	}
 }
 
@@ -88,9 +96,15 @@ func (self *Torrent) Parse() *BNode {
 func (self *Torrent) eval_dict() map[string]*BNode {
 
 	ret := make(map[string]*BNode, 0)
+	var prev []byte = nil
 	for self.cur < len(self.doc) && self.doc[self.cur] != 'e' {
-		k, v := string(self.eval_bstr()), self.Parse()
-		ret[k] = v
+		kb := self.eval_bstr()
+		if prev != nil && bytes.Compare(kb,prev) <= 0 {
+			fmt.Println("Parsing failed @ Dict due to unsorted Key-Value")
+			os.Exit(int(E_FILE))
+		}
+		prev = kb
+		ret[string(kb)] = self.Parse()
 	}
 
 	if self.cur >= len(self.doc) || self.doc[self.cur] != 'e' {
@@ -173,7 +187,7 @@ func (self *Torrent) eval_int() int {
 	}
 
 	neg := false
-	if self.doc[self.cur] == '-' {
+	if self.cur < len(self.doc) && self.doc[self.cur] == '-' {
 		neg = true
 		self.cur++
 		if self.cur < len(self.doc) && self.doc[self.cur] == '0' {

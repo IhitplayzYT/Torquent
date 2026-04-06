@@ -1,6 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"crypto/sha1"
+	"crypto/sha256"
+	"fmt"
+	"os"
+)
 
 func Traverse(node *BNode) any {
 	switch node.Type {
@@ -58,4 +63,35 @@ func print_tree(node *BNode, ident int) {
 	default:
 		return
 	}
+}
+
+func findinfo(node *BNode) *BNode {
+	if node.Type != BDICT {
+		fmt.Println("Torrent traverse failed due to corrupt torrent root")
+		os.Exit(int(E_FILE))
+	}
+	nd, ok := node.Dict["info"]
+	if !ok {
+		fmt.Println("Torrent traverse failed due to missing info root")
+		os.Exit(int(E_FILE))
+	}
+	return nd
+}
+
+func (self *Torrent) Merkle_root(root *BNode) (v1_hash [20]byte, v2_hash [32]byte, is_v1 bool, is_v2 bool) {
+	info := findinfo(root)
+	data := self.doc[info.span.strt:info.span.end]
+	mv, hasMV := info.Dict["meta version"]
+	isV2 := hasMV && mv.Int == 2
+	_, hasPieces := info.Dict["pieces"]
+	_, hasLen := info.Dict["length"]
+	_, hasfiles := info.Dict["files"]
+	isV1 := !isV2 || hasPieces || hasLen || hasfiles
+	if isV1 {
+		v1_hash = sha1.Sum(data)
+	}
+	if isV2 {
+		v2_hash = sha256.Sum256(data)
+	}
+	return v1_hash, v2_hash, isV1, isV2
 }
