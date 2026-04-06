@@ -37,7 +37,7 @@ func (t Torrent) open_file() {
 
 	if err != nil {
 		fmt.Println("Unable to open the file")
-		os.Exit(-2)
+		os.Exit(int(E_IO))
 	}
 	t.doc = If(len(t.doc) == 0, f, t.doc)
 }
@@ -55,7 +55,7 @@ func init_torrent(name string) Torrent {
 	l := len(self.doc)
 	if l <= 1 {
 		fmt.Println("Truncated/Corrupt torrent file provided")
-		os.Exit(-3)
+		os.Exit(int(E_FILE))
 	}
 	self.cur = 0
 	self.end = l - 1
@@ -72,7 +72,7 @@ func (self Torrent) Parse() *BNode {
 			return &BNode{Type: BDICT, Dict: self.eval_dict()}
 		} else {
 			fmt.Println("Corrupt File")
-			os.Exit(-4)
+			os.Exit(int(E_FILE))
 		}
 
 	} else if self.doc[self.cur] == 'i' {
@@ -83,7 +83,7 @@ func (self Torrent) Parse() *BNode {
 			node.Int = self.eval_int()
 		} else {
 			fmt.Println("Corrupt File")
-			os.Exit(-4)
+			os.Exit(int(E_FILE))
 		}
 		return node
 	} else if self.doc[self.cur] == 'l' {
@@ -91,7 +91,7 @@ func (self Torrent) Parse() *BNode {
 			return &BNode{Type: BLIST, List: self.eval_list()}
 		} else {
 			fmt.Println("Corrupt File")
-			os.Exit(-4)
+			os.Exit(int(E_FILE))
 		}
 
 	} else if self.doc[self.cur] >= '0' && self.doc[self.cur] <= '9' {
@@ -112,7 +112,7 @@ func (self Torrent) eval_dict() map[string]*BNode {
 	}
 	if self.doc[self.cur] != 'e' {
 		fmt.Println("Corrupt torrent file")
-		os.Exit(-4)
+		os.Exit(int(E_FILE))
 	}
 
 	return ret
@@ -131,13 +131,13 @@ func (self Torrent) eval_list() []*BNode {
 
 	if self.doc[self.cur] != 'e' {
 		fmt.Println("Corrupt torrent file")
-		os.Exit(-4)
+		os.Exit(int(E_FILE))
 	}
 
 	return k
 }
 
-//  2989281:wnfioeiworijj
+//  5:hello
 
 func (self Torrent) eval_bstr() []byte {
 	strt := self.cur
@@ -146,7 +146,7 @@ func (self Torrent) eval_bstr() []byte {
 	}
 	if self.cur == self.end {
 		fmt.Println("Corrupt Torrent File")
-		os.Exit(-4)
+		os.Exit(int(E_FILE))
 	}
 	le := self.doc[strt:self.cur]
 	l := 0
@@ -158,12 +158,12 @@ func (self Torrent) eval_bstr() []byte {
 
 	if self.cur == self.end || l < 0 {
 		fmt.Println("Corrupt Torrent File")
-		os.Exit(-4)
+		os.Exit(int(E_FILE))
 	}
 
 	if self.cur+l > self.end {
 		fmt.Println("Corrupt Torrent File")
-		os.Exit(-4)
+		os.Exit(int(E_FILE))
 	}
 
 	ret := self.doc[self.cur : self.cur+l]
@@ -187,7 +187,7 @@ func (self Torrent) eval_int() int {
 
 	if self.doc[self.cur] != 'e' {
 		fmt.Println("Corrupt torrent file")
-		os.Exit(-4)
+		os.Exit(int(E_FILE))
 	}
 
 	return If(neg, -val, val)
