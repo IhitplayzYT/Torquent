@@ -31,6 +31,9 @@ func main() {
 			fmt.Println("Parse failed!!")
 			os.Exit(int(E_BEN))
 		}
+		if clargs.dbg {
+			print_tree(node, 0)
+		}
 
 	}
 
