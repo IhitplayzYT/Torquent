@@ -46,10 +46,11 @@ func print_tree(node *BNode, ident int) {
 			fmt.Println("key:", k)
 			print_tree(v, ident+2)
 		}
+		indent(ident)
 		fmt.Println("}")
 	case BINT:
 		indent(ident)
-		fmt.Print("int:", node.Int)
+		fmt.Println("int:", node.Int)
 	case BLIST:
 		indent(ident)
 		fmt.Println("List: [")

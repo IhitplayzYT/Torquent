@@ -19,6 +19,8 @@ func DEBUG_STR() {
 	fmt.Println("./Torquent [-d|-t|-o|-i|-h] <TORRENT_FILES> ... \n  -d: Enables debug mode\n  -t: Enables multi threaded mode\n  -i=/path/to/input/dir: Provide the input directory to search for torrent file\n  -o=/path/to/output/dir: Provide the output directory for downloaded file\n  -h: Displays the help menu")
 }
 
+
+
 func parse_cli(cwd string) CLI {
 	cli := CLI{
 		dbg:   false,
@@ -34,7 +36,7 @@ func parse_cli(cwd string) CLI {
 	}
 
 	args := os.Args[1:]
-	if len(args) < 2 {
+	if len(args) < 1 {
 		DEBUG_STR()
 		os.Exit(int(E_CLI))
 	}

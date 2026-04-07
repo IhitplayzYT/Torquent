@@ -6,9 +6,6 @@ import (
 	"os"
 )
 
-type Parser struct {
-	cur, end int
-}
 type Btype int
 
 const (
@@ -16,7 +13,6 @@ const (
 	BSTR
 	BLIST
 	BDICT
-	BSPAN
 )
 
 type Span struct {
@@ -33,41 +29,34 @@ type BNode struct {
 }
 
 type Torrent struct {
-	fname    string
-	doc      []byte
-	cur, end int
-	node     *BNode
-}
-
-func (t *Torrent) open_file() {
-	f, err := os.ReadFile(t.fname)
-
-	if err != nil {
-		fmt.Println("Unable to open the file")
-		os.Exit(int(E_IO))
-	}
-	if len(t.doc) == 0 {
-		t.doc = f
-	}
+	fname string
+	doc   []byte
+	cur   int
+	node  *BNode
 }
 
 func (t *Torrent) is_open() bool {
 	return len(t.doc) != 0
 }
 
+func (t *Torrent) open_file() {
+	f, err := os.ReadFile(t.fname)
+	if err != nil {
+		fmt.Println("Unable to open the file")
+		os.Exit(int(E_IO))
+	}
+	t.doc = f
+}
+
 func init_torrent(name string) Torrent {
 	self := Torrent{fname: name}
+	self.open_file()
 
-	if !self.is_open() {
-		self.open_file()
-	}
-	l := len(self.doc)
-	if l <= 1 {
+	if len(self.doc) <= 1 {
 		fmt.Println("Truncated/Corrupt torrent file provided")
 		os.Exit(int(E_FILE))
 	}
 	self.cur = 0
-	self.end = l - 1
 	self.node = nil
 	return self
 }
@@ -86,6 +75,7 @@ func (self *Torrent) Parse() *BNode {
 		self.cur++
 		return &BNode{Type: BLIST, List: self.eval_list(), span: Span{strt, self.cur}}
 	case 'i':
+		self.cur++
 		return &BNode{Type: BINT, Int: self.eval_int(), span: Span{strt, self.cur}}
 	default:
 		return &BNode{Type: BSTR, Str: self.eval_bstr(), span: Span{strt, self.cur}}
@@ -94,12 +84,12 @@ func (self *Torrent) Parse() *BNode {
 
 // d....e
 func (self *Torrent) eval_dict() map[string]*BNode {
-
-	ret := make(map[string]*BNode, 0)
+	ret := make(map[string]*BNode)
 	var prev []byte = nil
+
 	for self.cur < len(self.doc) && self.doc[self.cur] != 'e' {
 		kb := self.eval_bstr()
-		if prev != nil && bytes.Compare(kb,prev) <= 0 {
+		if prev != nil && bytes.Compare(kb, prev) <= 0 {
 			fmt.Println("Parsing failed @ Dict due to unsorted Key-Value")
 			os.Exit(int(E_FILE))
 		}
@@ -117,8 +107,8 @@ func (self *Torrent) eval_dict() map[string]*BNode {
 
 // l....e
 func (self *Torrent) eval_list() []*BNode {
-
 	k := make([]*BNode, 0)
+
 	for self.cur < len(self.doc) && self.doc[self.cur] != 'e' {
 		k = append(k, self.Parse())
 	}
@@ -128,7 +118,6 @@ func (self *Torrent) eval_list() []*BNode {
 		os.Exit(int(E_FILE))
 	}
 	self.cur++
-
 	return k
 }
 
@@ -145,12 +134,8 @@ func (self *Torrent) eval_bstr() []byte {
 
 	le := self.doc[strt:self.cur]
 
-	if len(le) == 0 {
-		fmt.Println("Parsing failed @ Str due to Empty File")
-		os.Exit(int(E_FILE))
-	}
 	if len(le) > 1 && le[0] == '0' {
-		fmt.Println("Parsing failed @ Str due to null-terminated beginning")
+		fmt.Println("Parsing failed @ Str due to leading zero in length")
 		os.Exit(int(E_FILE))
 	}
 
@@ -162,13 +147,7 @@ func (self *Torrent) eval_bstr() []byte {
 		}
 		l = l*10 + int(v-'0')
 	}
-
 	self.cur++
-
-	if self.cur > len(self.doc) || l < 0 {
-		fmt.Println("Parsing failed @ Str due to Corrupt/Invaldi file")
-		os.Exit(int(E_FILE))
-	}
 
 	if self.cur+l > len(self.doc) {
 		fmt.Println("Parsing failed @ Str due to Corrupt/Invalid file")
@@ -180,18 +159,14 @@ func (self *Torrent) eval_bstr() []byte {
 	return ret
 }
 
-// i1893179e
 func (self *Torrent) eval_int() int {
-	if self.doc[self.cur] == 'i' {
-		self.cur++
-	}
 
 	neg := false
 	if self.cur < len(self.doc) && self.doc[self.cur] == '-' {
 		neg = true
 		self.cur++
 		if self.cur < len(self.doc) && self.doc[self.cur] == '0' {
-			fmt.Println("Parsing failed @ Int due to invalid length: -0")
+			fmt.Println("Parsing failed @ Int due to invalid: -0")
 			os.Exit(int(E_FILE))
 		}
 	}
@@ -202,7 +177,7 @@ func (self *Torrent) eval_int() int {
 	}
 
 	if self.doc[self.cur] == '0' && self.cur+1 < len(self.doc) && self.doc[self.cur+1] != 'e' {
-		fmt.Println("Parsing failed @ Int due to Int with leading zeroes")
+		fmt.Println("Parsing failed @ Int due to leading zeroes")
 		os.Exit(int(E_FILE))
 	}
 
@@ -216,7 +191,7 @@ func (self *Torrent) eval_int() int {
 		fmt.Println("Parsing failed @ Int due to Corrupt/Invalid file")
 		os.Exit(int(E_FILE))
 	}
-	self.cur++
+	self.cur++ // consume 'e'
 
 	if neg {
 		return -val
