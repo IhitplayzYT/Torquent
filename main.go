@@ -35,9 +35,10 @@ func main() {
 		if clargs.dbg {
 			print_tree(node, 0)
 		}
-		break
-		//dict := Traverse(node).(map[string]any)
-
+		dict := Traverse(node).(map[string]any)
+		//fmt.Println(dict)
+		cfg := get_meta(dict)
+		cfg.show()
 	}
 
 }
