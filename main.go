@@ -13,7 +13,7 @@ func init_cli() CLI {
 	}
 	clargs := parse_cli(home)
 	if clargs.dbg {
-		fmt.Printf("\nCLI {\ndbg: %s\nmulti: %s\ninputdir: %s\noutputdir: %s\nfiles: %v\n}\n", If(clargs.dbg, "True", "False"), If(clargs.multi, "Enabled", "Disabled"), clargs.idir, clargs.odir, clargs.files)
+		fmt.Printf("\nCLI {\ndbg: %s\nmulti: %s\ninputdir: %s\noutputdir: %s\nfiles: %v\n}\n\n", If(clargs.dbg, "True", "False"), If(clargs.multi, "Enabled", "Disabled"), clargs.idir, clargs.odir, clargs.files)
 	}
 	return clargs
 }
@@ -27,7 +27,6 @@ func main() {
 			os.Exit(int(E_IO))
 		}
 		node := torrconfig.Parse()
-		//v1, v2, is_v1, is_v2 := torrconfig.Merkle_root(node)
 		if node == nil {
 			fmt.Println("Parse failed!!")
 			os.Exit(int(E_BEN))
@@ -36,9 +35,20 @@ func main() {
 			print_tree(node, 0)
 		}
 		dict := Traverse(node).(map[string]any)
-		//fmt.Println(dict)
 		cfg := get_meta(dict)
-		cfg.show()
+		if clargs.dbg {
+			cfg.show()
+		}
+		v1, v2, is_v1, is_v2 := torrconfig.Merkle_root(node)
+		query := ""
+		if is_v1 {
+			query = cfg.mk_v1query(v1)
+		}
+		if is_v2 {
+			query = cfg.mk_v2query(v2)
+		}
+		fmt.Println(query)
+		WRN(query)
 	}
 
 }

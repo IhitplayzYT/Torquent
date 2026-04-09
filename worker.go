@@ -7,12 +7,11 @@ const JQUEUE_LEN int = 20
 
 type Job func()
 
-func add_worker(id int, job_queue <-chan Job, wg *sync.WaitGroup) {
+func add_worker(job_queue <-chan Job, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for j := range job_queue {
 		j()
 	}
-
 }
 
 func init_job_pool(cnt int, f func()) {
@@ -20,10 +19,10 @@ func init_job_pool(cnt int, f func()) {
 	var wg sync.WaitGroup
 	for i := 0; i < WORKER_CNT; i++ {
 		wg.Add(1)
-		add_worker(i, jqueue, &wg)
+		add_worker(jqueue, &wg)
 	}
 
-	for i := 0; i < cnt; i++ {
+	for range cnt {
 		jqueue <- f
 	}
 	close(jqueue)

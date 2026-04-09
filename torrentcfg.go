@@ -17,7 +17,16 @@ type T_config struct {
 }
 
 func (t T_config) show() {
-	fmt.Printf("T_CONFIG:\nannounce: %v\nannounce-list: %v\npieces[%v pieces of %v length]:%v\nName[%v]:%v\nFiles:%v\n", t.announce, t.announce_list, t.n_pieces, t.piece_len, t.pieces, t.length, t.name, t.files)
+	fmt.Printf("T_CONFIG:\nannounce: %v\nannounce-list: %v\npieces[%v pieces of %v length]: %v\nFileName: (%v bytes)%v\nFiles: %v\n", t.announce, t.announce_list, t.n_pieces, t.piece_len, t.pieces, t.length, t.name, t.fmt_files())
+}
+
+func (t T_config) fmt_files() string {
+	ret := "[\n"
+	for _, v := range t.files {
+		ret += fmt.Sprintf("%v of size %v bytes, offset at %v bytes\n", v.path, v.length, v.offset)
+	}
+	ret += "]\n"
+	return ret
 }
 
 type Fmeta struct {
@@ -26,7 +35,6 @@ type Fmeta struct {
 	offset int64
 }
 
-// TODO:FIXME: Some issue is coming regarding the files arg it has non files in it also
 func get_meta(cfg map[string]any) T_config {
 	ret := T_config{}
 	announce, ok := cfg["announce"]
@@ -214,7 +222,7 @@ func get_meta(cfg map[string]any) T_config {
 			},
 		}
 	}
-	//  SPECIAL CARE
 
+	progress.left = int(ret.length)
 	return ret
 }
