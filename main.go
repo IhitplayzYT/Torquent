@@ -40,15 +40,39 @@ func main() {
 			cfg.show()
 		}
 		v1, v2, is_v1, is_v2 := torrconfig.Merkle_root(node)
-		query := ""
 		if is_v1 {
-			query = cfg.mk_v1query(v1)
+			query, poid := cfg.mk_v1query(v1)
+			response, err := announce(query)
+			if err != nil {
+				fmt.Printf("Error in sending request: %v\n", err)
+				os.Exit(int(E_HTTP))
+			}
+			resp_torrconfig := Torrent{
+				doc:   response,
+				fname: "",
+				cur:   0,
+				node:  nil,
+			}
+			resp_node := resp_torrconfig.Parse()
+			if resp_node == nil {
+				fmt.Println("Parse failed!!")
+				os.Exit(int(E_BEN))
+			}
+			if clargs.dbg {
+				print_tree(resp_node, 0)
+			}
+
+			r_dict := Traverse(resp_node).(map[string]any)
+			peers := parse_resp_dict(r_dict)
+			pid := make([]byte, 20)
+			copy(pid, []byte(poid[:20]))
+			get_pieces(peers, v1, [20]byte(pid))
+
 		}
 		if is_v2 {
-			query = cfg.mk_v2query(v2)
+			query := cfg.mk_v2query(v2)
+			WRN(query)
 		}
-		fmt.Println(query)
-		WRN(query)
 	}
 
 }

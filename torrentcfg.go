@@ -40,7 +40,7 @@ func get_meta(cfg map[string]any) T_config {
 	announce, ok := cfg["announce"]
 	if !ok {
 		fmt.Println("Corrupt torrent unable to find \"Announce\"")
-		os.Exit(int(E_FILE))
+		os.Exit(int(E_NOTFOUND))
 	}
 	a, ok := announce.([]byte)
 	if !ok {
@@ -51,7 +51,7 @@ func get_meta(cfg map[string]any) T_config {
 	announce_list, ok := cfg["announce-list"]
 	if !ok {
 		fmt.Println("Corrupt torrent unable to find \"Announce List\"")
-		os.Exit(int(E_FILE))
+		os.Exit(int(E_NOTFOUND))
 	}
 	b, ok := announce_list.([]any)
 	if !ok {
@@ -83,7 +83,7 @@ func get_meta(cfg map[string]any) T_config {
 	info, ok := cfg["info"]
 	if !ok {
 		fmt.Println("Corrupt torrent unable to find \"Info\"")
-		os.Exit(int(E_FILE))
+		os.Exit(int(E_NOTFOUND))
 	}
 
 	info_map, ok := info.(map[string]any)
@@ -95,7 +95,7 @@ func get_meta(cfg map[string]any) T_config {
 	c, ok := info_map["length"]
 	if !ok {
 		fmt.Println("Corrupt info_map unable to find field \"lenght\"")
-		os.Exit(int(E_FILE))
+		os.Exit(int(E_NOTFOUND))
 	}
 
 	d, ok := c.(int)
@@ -108,7 +108,7 @@ func get_meta(cfg map[string]any) T_config {
 	e, ok := info_map["name"]
 	if !ok {
 		fmt.Println("Corrupt info_map unable to find field \"name\"")
-		os.Exit(int(E_FILE))
+		os.Exit(int(E_NOTFOUND))
 	}
 	f, ok := e.([]byte)
 	if !ok {
@@ -120,7 +120,7 @@ func get_meta(cfg map[string]any) T_config {
 	g, ok := info_map["piece length"]
 	if !ok {
 		fmt.Println("Corrupt info_map unable to find field \"piece length\"")
-		os.Exit(int(E_FILE))
+		os.Exit(int(E_NOTFOUND))
 	}
 
 	h, ok := g.(int)
@@ -133,7 +133,7 @@ func get_meta(cfg map[string]any) T_config {
 	l, ok := info_map["pieces"]
 	if !ok {
 		fmt.Println("Corrupt info_map unable to find field \"pieces\"")
-		os.Exit(int(E_FILE))
+		os.Exit(int(E_NOTFOUND))
 	}
 
 	m, ok := l.([]byte)
@@ -151,7 +151,6 @@ func get_meta(cfg map[string]any) T_config {
 		ret.pieces[idx] = m[idx*20 : idx*20+20]
 	}
 
-	//  SPECIAL CARE
 	i, ok := info_map["files"]
 	if ok {
 		files_raw, ok := i.([]any)

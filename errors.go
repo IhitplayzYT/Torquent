@@ -9,4 +9,8 @@ const (
 	E_CLI
 	E_BEN
 	E_FILE
+	E_HTTP
+	E_NOTFOUND
+	E_BADRES
+	E_NOPEER
 )
