@@ -66,7 +66,7 @@ func main() {
 			peers := parse_resp_dict(r_dict)
 			pid := make([]byte, 20)
 			copy(pid, []byte(poid[:20]))
-			get_pieces(peers, v1, [20]byte(pid))
+			get_pieces(peers, v1, [20]byte(pid), cfg.pieces)
 
 		}
 		if is_v2 {
