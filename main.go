@@ -66,12 +66,35 @@ func main() {
 			peers := parse_resp_dict(r_dict)
 			pid := make([]byte, 20)
 			copy(pid, []byte(poid[:20]))
-			get_pieces(peers, v1, [20]byte(pid), cfg.pieces)
+			get_pieces(peers, v1, [20]byte(pid), cfg)
 
 		}
 		if is_v2 {
 			query := cfg.mk_v2query(v2)
-			WRN(query)
+			response, err := announce(query)
+			if err != nil {
+				fmt.Printf("Error in sending v2 request: %v\n", err)
+				os.Exit(int(E_HTTP))
+			}
+			resp_torrconfig := Torrent{doc:response,fname:"",cur:0,node:nil}
+			resp_node := resp_torrconfig.Parse()
+			if resp_node == nil {
+				fmt.Println("Parse failed!!")
+				os.Exit(int(E_BEN))
+			}
+			if clargs.dbg {
+				print_tree(resp_node, 0)
+			}
+
+			r_dict := Traverse(resp_node).(map[string]any)
+			peers := parse_resp_dict(r_dict)
+			// Generate peer ID for v2
+			pid := gen_pid()
+			full_pid := CLIENT_ID + pid
+			pid_bytes := make([]byte, 20)
+			copy(pid_bytes, []byte(full_pid[:20]))
+			// CHANGE: Using v1 hash for handshake compatibility, v2 uses different piece verification
+			get_pieces(peers, v1, [20]byte(pid_bytes), cfg)
 		}
 	}
 

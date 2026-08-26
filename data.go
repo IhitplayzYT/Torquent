@@ -30,7 +30,6 @@ func get_pieces(peers Peers, hash [20]byte, peerid [20]byte, cfg T_config) {
 			copy(handshake[28:48], hash[:])
 			copy(handshake[48:68], peerid[:])
 			conn.Write(handshake)
-
 			resp := make([]byte, 68)
 			io.ReadFull(conn, resp)
 			if !bytes.Equal(resp[28:48], hash[:]) {
@@ -58,7 +57,13 @@ func get_pieces(peers Peers, hash [20]byte, peerid [20]byte, cfg T_config) {
 					bitfield = append(bitfield, payload...)
 				case 5:
 					bitfield = payload
-
+				case 7:
+					if len(payload) >= 8 {
+						piece_idx := binary.BigEndian.Uint32(payload[0:4])
+						block_offset := binary.BigEndian.Uint32(payload[4:8])
+						block_data := payload[8:]
+						WRN(piece_idx, block_offset, len(block_data))
+					}
 				case 255:
 
 				}
@@ -73,6 +78,10 @@ func get_pieces(peers Peers, hash [20]byte, peerid [20]byte, cfg T_config) {
 					}
 				}
 
+				if tgt != -1 {
+					block_size := 16384
+					get_block(conn, tgt, 0, block_size)
+				}
 			}
 
 		}
@@ -110,7 +119,13 @@ func read_data(conn net.Conn) (id byte, payload []byte, err error) {
 	return msg[0], msg[1:], nil
 }
 
-func get_block(conn net.Conn, idx, strt, len int) {
-	req := make()
-
+func get_block(conn net.Conn, idx, off, ln int) {
+	// Message format: <length(4 bytes)><ID(1 byte)><idx(4 bytes)><offset(4 bytes)><block_length(4 bytes)>
+	req := make([]byte, 17)
+	binary.BigEndian.PutUint32(req[0:4], 13) // 12 bytes payload + 1 byte ID
+	req[4] = 6
+	binary.BigEndian.PutUint32(req[5:9], uint32(idx))
+	binary.BigEndian.PutUint32(req[9:13], uint32(off))
+	binary.BigEndian.PutUint32(req[13:17], uint32(ln))
+	conn.Write(req)
 }

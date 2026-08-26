@@ -148,7 +148,8 @@ func parse_resp_dict(dict map[string]any) Peers {
 		os.Exit(int(E_FILE))
 
 	}
-	lv4 := len(pv4) % 6
+	// CHANGE: Fixed bug - changed % to / to correctly calculate number of peers (each peer is 6 bytes)
+	lv4 := len(pv4) / 6
 	v4 := make([]Peer_v4, 0)
 	for i := 0; i < lv4; i++ {
 		v4 = append(v4, Peer_v4{
@@ -174,7 +175,8 @@ func parse_resp_dict(dict map[string]any) Peers {
 		os.Exit(int(E_FILE))
 
 	}
-	lv6 := len(pv6)
+	// CHANGE: Fixed bug - changed to /18 to correctly calculate number of IPv6 peers (each peer is 18 bytes)
+	lv6 := len(pv6) / 18
 	v6 := make([]Peer_v6, 0)
 	for i := 0; i < lv6; i++ {
 		v6 = append(v6, Peer_v6{

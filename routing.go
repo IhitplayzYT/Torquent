@@ -48,14 +48,19 @@ func (t T_config) fmt_hash(hash [20]byte) string {
 }
 
 // GET /announce?info_hash=<urlencoded>&peer_id=<id>&port=6881&uploaded=0&downloaded=0&left=1048576&compact=1
-
 func (t T_config) mk_v1query(hash [20]byte) (string, string) {
 	pid := CLIENT_ID + gen_pid()
 	return fmt.Sprintf("%v?info_hash=%v&peer_id=%v&port=%v&uploaded=%v&downloaded=%v&left=%v&compact=1", t.announce, t.fmt_hash(hash), url.QueryEscape(pid), PORT, progress.uploaded, progress.dowloaded, progress.left), pid
 }
 
 func (t T_config) mk_v2query(hash [32]byte) string {
-	return fmt.Sprintf("%v", hash)
+	// similar to v1 but with 32b hash
+	pid := CLIENT_ID + gen_pid()
+	hash_str := ""
+	for _, v := range hash {
+		hash_str += fmt.Sprintf("%%%02x", v)
+	}
+	return fmt.Sprintf("%v?info_hash=%v&peer_id=%v&port=%v&uploaded=%v&downloaded=%v&left=%v&compact=1", t.announce, hash_str, url.QueryEscape(pid), PORT, progress.uploaded, progress.dowloaded, progress.left)
 }
 
 func announce(url string) ([]byte, error) {
@@ -69,12 +74,10 @@ func announce(url string) ([]byte, error) {
 
 	req.Header.Set("User-Agent", "ru-torrent/0.1")
 	req.Header.Set("Connection", "close")
-
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("Request Failed with status code: %v\n", resp.StatusCode)
